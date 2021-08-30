@@ -90,7 +90,7 @@ def on_postback(event):
 
 #handle_nessageから呼ばれる
 #時間選択アクションを起こす
-def make_button(event, user_id):
+def make_button():
 	message_template = TemplateSendMessage(
 		alt_text="アラーム",
 		template=ButtonsTemplate(
@@ -121,9 +121,6 @@ def handle_message(event):
 		event.reply_token,
 		messages
 	)
-	# line_bot_api.reply_message(
-	#   event.reply_token,
-	#   TextSendMessage(text=event.message.text))
 
 if __name__ == "__main__":
 #    app.run()
