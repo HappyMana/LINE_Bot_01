@@ -54,7 +54,7 @@ def callback():
 
 	return 'OK'
 
-# ボタンの入力を受け取るPostbackEvent
+# ボタンの入力を受け取って今まで登録したことがなければinsertして、登録してあればupdateする
 @handler.add(PostbackEvent)
 def on_postback(event):
 	# reply_token = event.reply_token
@@ -88,6 +88,8 @@ def on_postback(event):
 			messages=TextSendMessage(text='なんかミスってる')
 		)
 
+#handle_nessageから呼ばれる
+#時間選択アクションを起こす
 def make_button(event, user_id):
 	message_template = TemplateSendMessage(
 		alt_text="アラーム",
@@ -110,6 +112,7 @@ def make_button(event, user_id):
 	)
 	return message_template
 
+#メッセージが入力されたら
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
 	# 基本的にここにコードを書いていきます。
