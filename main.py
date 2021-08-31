@@ -12,10 +12,10 @@ from linebot.models import (
 )
 
 import os
-import schedule
 import time
 import MySQLdb
 from dotenv import load_dotenv
+import requests
 
 app = Flask(__name__)
 
@@ -25,13 +25,11 @@ conn = None
 load_dotenv()
 LINE_CHANNEL_ACCESS_TOKEN = os.environ["LINE_CHANNEL_ACCESS_TOKEN"]
 LINE_CHANNEL_SECRET = os.environ["LINE_CHANNEL_SECRET"]
-# USER_ID = os.environ["USER_ID"]
 REMOTE_HOST = os.environ["REMOTE_HOST"]
 REMOTE_DB_NAME = os.environ["REMOTE_DB_NAME"]
 REMOTE_DB_USER = os.environ["REMOTE_DB_USER"]
 REMOTE_DB_PASS = os.environ["REMOTE_DB_PASS"]
 REMOTE_DB_TB = os.environ["REMOTE_DB_TB"]
-
 
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
@@ -67,21 +65,22 @@ def on_postback(event):
 	try:
 		conn = MySQLdb.connect(user=REMOTE_DB_USER, passwd=REMOTE_DB_PASS, host=REMOTE_HOST, db=REMOTE_DB_NAME)
 		c = conn.cursor()
-		sql = "SELECT `user_id` FROM`"+REMOTE_DB_TB+"` WHERE `user_id` = '"+user_id+"';"
+		sql = "SELECT * FROM "+REMOTE_DB_TB+" WHERE user_id = '"+user_id+"'"
 		c.execute(sql)
 		ret = c.fetchall()
 		if len(ret) == 0:
 			attribute = 0
-			sql = "INSERT INTO `"+REMOTE_DB_TB+"` (`user_id`, `display_name`, `alarm_time`, `attribute`) VALUES ('"+user_id+"', '"+display_name+"', '"+alarm_time+"', '"+attribute+"');"
+			sql2 = "INSERT INTO "+REMOTE_DB_TB+" VALUES ('"+user_id+"', '"+display_name+"', "+alarm_time+", "+attribute+")"
 		elif len(ret) == 1:
-			sql = "UPDATE `"+REMOTE_DB_TB+"` SET `display_name` = '"+display_name+"', `alarm_time` = '"+alarm_time+"' WHERE `user_id` = '"+user_id+"';"
-		c.execute(sql)
+			sql2 = "UPDATE "+REMOTE_DB_TB+" SET display_name = '"+display_name+"', alarm_time = "+alarm_time+" WHERE user_id = '"+user_id+"'"
+		c.execute(sql2)
 		conn.commit()
 		conn.close()
 		line_bot_api.push_message(
 			to=user_id,
 			messages=TextSendMessage(text=alarm_time + 'にアラームを設定したよ！')
 		)
+		# alarm_call()
 	except:
 		line_bot_api.push_message(
 			to=user_id,
@@ -121,6 +120,28 @@ def handle_message(event):
 		event.reply_token,
 		messages
 	)
+
+# def alarm_message(ret, event):
+#   user_id = event.source.user_id
+#   line_bot_api.push_message(
+# 		to=user_id,
+# 		messages=TextSendMessage(text=ret + "だよ！起きて！")
+# 	)
+
+# def alarm_call(event):
+# 	user_id = event.source.user_id
+# 	conn = MySQLdb.connect(user=REMOTE_DB_USER, passwd=REMOTE_DB_PASS, host=REMOTE_HOST, db=REMOTE_DB_NAME)
+#   c = conn.cursor()
+# 	sql = "SELECT `alarm_time` FROM`"+REMOTE_DB_TB+"` WHERE `user_id` = '"+user_id+"';"
+# 	c.execute(sql)
+# 	ret = c.fetchall()
+# 	while True:
+# 		dt = time.time.now()#現在時刻の取得
+# 		now_time =dt.strftime('%H:%M')
+# 		if now_time == ret:#時刻の指定
+# 			alarm_message(ret)#自作関数lineを呼び出す
+# 			break
+# 		time.sleep(1)
 
 if __name__ == "__main__":
 #    app.run()
